@@ -1,0 +1,23 @@
+.main_container {
+  display: grid;
+
+  grid-template-rows: 60px auto;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+.header {
+  background-color: rgb(9, 28, 245);
+  grid-column: 1/-1;
+  box-shadow: 0px -2px 5px rgb(2, 2, 2);
+  z-index: 999;
+}
+.side_bar {
+  box-shadow: -2px 5px 5px rgb(2, 2, 2);
+  
+}
+.main_content {
+  overflow: auto;
+  /* margin: 0 20px; */
+  /* padding: 20px; */
+}

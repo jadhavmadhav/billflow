@@ -1,0 +1,7 @@
+.isNotifictionModal {
+  height: 500px;
+  width: 400px;
+  background-color: white;
+  margin-left: calc(100% - 420px);
+  border-radius: 8px; 
+}
