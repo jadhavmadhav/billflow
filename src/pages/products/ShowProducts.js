@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,123 +11,120 @@ import {
   Pagination,
   LinearProgress,
   Box,
+  Button,
 } from "@mui/material";
-import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import { DateFormatter } from "../../util/formats";
 import { deleteProduct } from "../../services/productsServices";
-import NoData from "../../components/NoData";
+import { MdDeleteSweep } from "react-icons/md";
+
+import { DataGrid } from "@mui/x-data-grid";
+import { useSelector } from "react-redux";
 
 export default function ShowProducts({ productList, productDetailsApi }) {
+  const [tableRows, setTableRows] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5; // Set the number of rows per page
 
-  const productDeleteApi = async (productId) => {
+  const enterpriseData = useSelector(
+    (state) => state?.enterpriseDetails?.product?.productTable
+  );
+  useEffect(() => {
+    setTableRows(enterpriseData);
+  }, [enterpriseData]);
+
+  const handleDeleteProduct = async (id) => {
     try {
-      const request = await deleteProduct(productId);
-      const response = await request.data;
-      if (response.status === 200) {
+      const response = await deleteProduct(id);
+      if (response.status == 200) {
         productDetailsApi();
       }
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
 
-  const handlePageChange = (event, value) => {
-    setCurrentPage(value);
-  };
+  const columns = [
+    { field: "id", headerName: "S.No", width: 100 },
+    ...tableRows?.map((col) => ({
+      field: col.key, // Assuming col.key contains the correct key in the row object
+      headerName: col.label, // Display label for the header
+      width: 200,
+      renderCell: (params) => {
+        const value = params.row[col.key]; // Extract the specific field value from the row
+        const obj = params.row;
+        // Handle cases where value is an array (like items array)
+        if (Array.isArray(value)) {
+          return value.map((x, idx) => (
+            <span key={idx}>
+              {x.item}
+              {idx < value.length - 1 && ", "}
+            </span>
+          ));
+        }
+
+        // Handle the case where the column key is 'status'
+        if (col.key === "actions") {
+          return (
+            <div className="flex items-center h-[100%] ">
+              <MdDeleteSweep
+                fontSize="26px"
+                color="#d80404"
+                className="cursor-pointer active:scale-[1.2] "
+                onClick={() => handleDeleteProduct(obj._id)}
+              />
+            </div>
+          );
+        }
+
+        if (col.key === "totalBuyingPrice") {
+          const totalPrice = obj.buyingPrice * obj.quantity;
+          return totalPrice;
+        }
+
+        if (col.key === "availableQuantity") {
+          return obj.quantity - obj.saleQuantity;
+        }
+
+        // Handle the case where the column key is 'date' (formatting the date)
+        if (col.key === "date") {
+          return DateFormatter(value);
+        }
+
+        // Return the value for other cases
+        return value ?? "N/A"; // Handle null or undefined values with fallback
+      },
+    })),
+  ];
+
+  const rows = productList?.map((invoice, index) => ({
+    id: index + 1,
+    ...invoice,
+  }));
 
   // Pagination Logic
-  const paginatedProducts = productList.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
 
+   
+  const getRowClassName = (params) => {
+    const availableQuantity = params.row.quantity - params.row.saleQuantity;
+    return availableQuantity < 0 ? "negative-quantity-row" : "";
+  };
   return (
     <div className="flex flex-col h-full">
-      <TableContainer component={Paper} className="overflow-auto flex-grow">
-        <Table stickyHeader>
-          <TableHead>
-            <TableRow>
-              <TableCell>Sr.No</TableCell>
-              <TableCell>Product Name</TableCell>
-              <TableCell>Buying Date</TableCell>
-              <TableCell>SGST (%)</TableCell>
-              <TableCell>CGST (%)</TableCell>
-              <TableCell>Cost</TableCell>
-              <TableCell>Buying Price</TableCell>
-              <TableCell>Selling Price</TableCell>
-              <TableCell>Quantity</TableCell>
-              <TableCell>Total Buying Price</TableCell>
-              <TableCell>Available Quantity</TableCell> {/* New column */}
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedProducts.map((product, index) => {
-              const {
-                productId,
-                item,
-                sgst,
-                cgst,
-                buyingPrice,
-                sellingPrice,
-                quantity,
-                cost,
-                createdAt,
-                saleQuantity,
-              } = product;
-              let inDate = DateFormatter(createdAt);
-              let totalBuyingPrice = Number(buyingPrice) * Number(quantity);
-              let availableQuantity = Number(quantity) - Number(saleQuantity);
-              let totalQuantity = Number(quantity); // Total quantity as the progress max value
-
-              return (
-                <TableRow key={productId}>
-                  <TableCell>
-                    {index + 1 + (currentPage - 1) * rowsPerPage}
-                  </TableCell>
-                  <TableCell>{item}</TableCell>
-                  <TableCell>{inDate}</TableCell>
-                  <TableCell>{sgst}</TableCell>
-                  <TableCell>{cgst}</TableCell>
-                  <TableCell>{cost}</TableCell>
-                  <TableCell>{buyingPrice}</TableCell>
-                  <TableCell>{sellingPrice}</TableCell>
-                  <TableCell>{quantity}</TableCell>
-                  <TableCell>{totalBuyingPrice}</TableCell>
-                  <TableCell style={{ textAlign: "center" }}>
-                    {availableQuantity}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => console.log(`Edit ${productId}`)}
-                    >
-                      <FaEdit size={20} />
-                    </IconButton>
-                    <IconButton
-                      color="secondary"
-                      onClick={() => productDeleteApi(productId)}
-                    >
-                      <FaTrashAlt size={20} />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-        {productList.length === 0 && <NoData />}
-      </TableContainer>
-
-      {/* Pagination */}
-      <div className="flex justify-center mt-4">
-        <Pagination
-          count={Math.ceil(productList.length / rowsPerPage)}
-          page={currentPage}
-          onChange={handlePageChange}
-          color="primary"
+      <div style={{ height: "100%", width: "100%" }}>
+        <DataGrid
+          rows={rows || []}
+          columns={columns || []}
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20, 50]}
+          pagination
+          disableSelectionOnClick
+          // columnHeaderHeight={36}
+          getRowClassName={getRowClassName}
+          sx={{
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: "lightblue", // Header background color
+            },
+          }}
         />
       </div>
     </div>

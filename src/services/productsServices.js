@@ -3,11 +3,11 @@ import http from "../httpCommon";
 import { apiRequestWithAuth } from "../AxiosInstance";
 
 export const createNewProduct = (data) => {
-  return http.post(`/create-new-product`, data);
+  return apiRequestWithAuth("post", `/create-new-product`, data);
 };
 
 export const getAllProduct = (userId) => {
-  return apiRequestWithAuth("get", `/get-product-list/${userId}`);
+  return apiRequestWithAuth("get", `/get-all-products/${userId}`);
 };
 
 export const getAllProductsForBilling = (userId) => {

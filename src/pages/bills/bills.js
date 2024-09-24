@@ -20,7 +20,7 @@ const Bills = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   const enterpriseData = useSelector(
-    (state) => state.enterpriseDetails?.bill?.billTable
+    (state) => state?.enterpriseDetails?.bill?.billTable
   );
 
   useEffect(() => {

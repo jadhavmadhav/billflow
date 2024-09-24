@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   TextField,
   Button,
@@ -12,77 +12,64 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
-import AutocompleteComponent from "../../components/AutocompleteComponent";
 import { createNewProduct } from "../../services/productsServices";
 import useToast from "../../hooks/useToast";
-// import { saveAs } from "file-saver";
-
-// Configuration for fields and their types
-const fieldConfig = [
-  { label: "Product Name", name: "productName", type: "text", required: true },
-  { label: "Company", name: "companyName", type: "text", required: true },
-  { label: "HSN Code", name: "hsnCode", type: "text", required: true },
-  { label: "GST %", name: "gst", type: "number", required: true },
-  { label: "Buying Price", name: "buyingPrice", type: "number", required: true },
-  { label: "Selling Price", name: "sellingPrice", type: "number", required: true },
-  { label: "Quantity", name: "quantity", type: "number", required: true },
-  { label: "Seller Name", name: "companySellerName", type: "text", required: true },
-  { label: "Labour Cost", name: "labourCost", type: "number", required: true },
-  { label: "Transport Rent", name: "transportRent", type: "number", required: true },
-  { label: "Other", name: "other", type: "text" },
-  { label: "Measurement", name: "measurement", type: "select", options: ["liter", "item", "kg", "length"], required: true },
-  { label: "Is Perishable?", name: "isPerishable", type: "checkbox" }
-];
-
-const templateUrl = "/path/to/template.csv"; // Adjust the path to your template file
+import { useSelector } from "react-redux";
 
 const AddNewProduct = () => {
   const [productObj, setProductObj] = useState({});
-  const [selectedValue, setSelectedValue] = useState("item");
-
   const { showToast } = useToast();
-  const userId = localStorage.getItem("userId");
+  const enterpriseId = localStorage.getItem("enterpriseId");
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setProductObj((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-  };
+  // Fetching extra fields from Redux
+  const extraFieldsForProduct = useSelector(
+    (state) => state?.enterpriseDetails?.extraFieldsForProduct
+  );
 
+  // Reset the form
   const handleCancel = () => {
     setProductObj({});
-    setSelectedValue("item");
   };
 
+  // Add new product
   const handleAddProduct = async () => {
     try {
-      const response = await createNewProduct({ ...productObj, userId, measurement: selectedValue });
-      if (response.data.status === 200) {
+      const response = await createNewProduct({
+        ...productObj,
+        enterpriseId: localStorage.getItem("enterprise_id"),
+      });
+
+      if (response.status === 200) {
         setProductObj({});
-        setSelectedValue("item");
-        showToast(response.data.message, "success");
+        showToast(response.message, "success");
       } else {
-        throw new Error(response.data.message);
+        throw new Error(response.message);
       }
     } catch (error) {
       showToast(error.message, "error");
     }
   };
+  // Add new product
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Implement your logic to handle .svc file upload
-      console.log("File selected:", file.name);
+    let newValue;
+    if (type === "checkbox") {
+      newValue = checked;
+    } else if (type === "number") {
+      // Ensure that value is converted to a number but allow empty input for better UX
+      newValue = value === "" ? "" : +value;
+    } else {
+      newValue = value;
     }
+
+    setProductObj((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
   };
 
-  const handleDownloadTemplate = () => {
-    // saveAs(templateUrl, "product-template.csv");
-  };
-
+  // Render different field types
   const renderField = (field) => {
     switch (field.type) {
       case "text":
@@ -92,20 +79,33 @@ const AddNewProduct = () => {
             fullWidth
             required={field.required}
             label={field.label}
-            name={field.name}
+            name={field.field}
             type={field.type}
-            value={productObj[field.name] || ""}
+            value={productObj[field.field] || ""}
             onChange={handleChange}
             placeholder={`Enter ${field.label}`}
           />
         );
-      case "select":
+      case "textarea":
+        return (
+          <TextField
+            fullWidth
+            multiline
+            required={field.required}
+            label={field.label}
+            name={field.field}
+            value={productObj[field.field] || ""}
+            onChange={handleChange}
+            placeholder={`Enter ${field.label}`}
+          />
+        );
+      case "dropdown":
         return (
           <FormControl fullWidth required={field.required}>
             <InputLabel>{field.label}</InputLabel>
             <Select
-              name={field.name}
-              value={productObj[field.name] || ""}
+              name={field.field}
+              value={productObj[field.field] || ""}
               onChange={handleChange}
             >
               {field.options.map((option) => (
@@ -116,17 +116,30 @@ const AddNewProduct = () => {
             </Select>
           </FormControl>
         );
-      case "checkbox":
+      case "boolean":
         return (
           <FormControlLabel
             control={
               <Checkbox
-                name={field.name}
-                checked={productObj[field.name] || false}
+                name={field.field}
+                checked={productObj[field.field] || false}
                 onChange={handleChange}
               />
             }
             label={field.label}
+          />
+        );
+      case "date":
+        return (
+          <TextField
+            fullWidth
+            required={field.required}
+            label={field.label}
+            name={field.field}
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={productObj[field.field] || ""}
+            onChange={handleChange}
           />
         );
       default:
@@ -135,41 +148,25 @@ const AddNewProduct = () => {
   };
 
   return (
-    <Paper elevation={3} style={{ padding: '20px', borderRadius: '8px' }}>
-      <Typography variant="h6" gutterBottom>Add New Product</Typography>
-      
-      {/* Buttons for File Upload and Template Download */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <Button variant="outlined" component="label">
-          Upload .svc File
-          <input
-            type="file"
-            accept=".svc"
-            hidden
-            onChange={handleFileUpload}
-          />
-        </Button>
-        <Button variant="outlined" color="info" onClick={handleDownloadTemplate}>
-          Download Template
-        </Button>
-      </div>
+    <Paper elevation={3} style={{ padding: "20px", borderRadius: "8px" }}>
+      <Typography variant="h6" gutterBottom>
+        Add New Product
+      </Typography>
 
-      {/* Form Fields */}
-      <Grid container spacing={3}>
-        {fieldConfig.map((field) => (
-          <Grid item xs={12} sm={6} key={field.name}>
+      <Grid container spacing={2}>
+        {extraFieldsForProduct?.map((field) => (
+          <Grid item xs={12} sm={6} md={4} key={field.field}>
             {renderField(field)}
           </Grid>
         ))}
       </Grid>
 
-      {/* Action Buttons */}
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-        <Button variant="outlined" color="error" onClick={handleCancel}>
-          Cancel
+      <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
+        <Button variant="contained" onClick={handleAddProduct}>
+          Add Product
         </Button>
-        <Button variant="contained" color="primary" onClick={handleAddProduct}>
-          Add
+        <Button variant="outlined" onClick={handleCancel}>
+          Cancel
         </Button>
       </div>
     </Paper>
