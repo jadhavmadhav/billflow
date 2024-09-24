@@ -38,7 +38,7 @@ const AddNewProduct = () => {
         ...productObj,
         enterpriseId: localStorage.getItem("enterprise_id"),
       });
-
+    
       if (response.status === 200) {
         setProductObj({});
         showToast(response.message, "success");
