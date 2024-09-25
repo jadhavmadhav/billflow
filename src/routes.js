@@ -3,10 +3,9 @@ import { createBrowserRouter, redirect } from "react-router-dom";
 import Login from "./pages/login/login";
 import PublicRoutes from "./layout/publicRoutes";
 import MainLayout from "./layout/mainLayout";
-import {Dashboard} from "./pages/dashboard/Dashboard";
- 
- 
-import Sales from "./pages/sales/Sales"; 
+import { Dashboard } from "./pages/dashboard/Dashboard";
+
+import Sales from "./pages/sales/Sales";
 import Reports from "./pages/reports/Reports";
 import Customers from "./pages/customers/Customers";
 import CustomerDetails from "./pages/customers/customerDetails";
@@ -15,8 +14,10 @@ import ViewNotification from "./pages/Notification/ViewNotification";
 import Profile from "./pages/profile/profile";
 import Registration from "./pages/registration/registration";
 import CreateBill from "./pages/createBill/CreateBill";
-import Bills from "./pages/bills/bills"; 
+import Bills from "./pages/bills/bills";
 import Inventory from "./pages/products/Products";
+import PurchaseBill from "./pages/products/PurchaseBill";
+import Configuration from "./pages/configuration/Configuration";
 
 const Routes = createBrowserRouter([
   {
@@ -42,7 +43,7 @@ const Routes = createBrowserRouter([
         path: "/dashboard",
         element: <Dashboard />,
       },
-      
+
       {
         path: "/create-bill",
         element: <CreateBill />,
@@ -72,10 +73,14 @@ const Routes = createBrowserRouter([
         path: "/inventory",
         element: <Inventory />,
       },
-      // {
-      //   path: "/products/new-product",
-      //   element: <AddNewProduct />,
-      // },
+      {
+        path: "/purchase-bill",
+        element: <PurchaseBill />,
+      },
+      {
+        path: "/configuration",
+        element: <Configuration />,
+      },
       {
         path: "/notification/:id",
         element: <ViewNotification />,

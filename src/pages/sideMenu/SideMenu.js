@@ -1,23 +1,29 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import useToast from '../../hooks/useToast';
-import { VscDashboard } from 'react-icons/vsc';
-import { IoCreateOutline } from 'react-icons/io5';
-import { SiBuzzfeed } from 'react-icons/si';
-import { GoPeople } from 'react-icons/go';
-import { TbReportSearch } from 'react-icons/tb';
-import { LiaFileInvoiceDollarSolid } from 'react-icons/lia';
-import { MdProductionQuantityLimits } from 'react-icons/md';
-import { RiLogoutBoxLine } from 'react-icons/ri';
+import React, { useEffect, useMemo, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import useToast from "../../hooks/useToast";
+
+// Updated icons from react-icons
+import { FaHome } from "react-icons/fa"; // Replacing Dashboard icon
+import { FiFileText } from "react-icons/fi"; // Replacing Create Bill icon
+import { BiDollarCircle } from "react-icons/bi"; // Replacing Sales icon
+import { HiOutlineUserGroup } from "react-icons/hi"; // Replacing Customers icon
+import { AiOutlineBarChart } from "react-icons/ai"; // Replacing Reports icon
+import { GiReceiveMoney } from "react-icons/gi"; // Replacing Bills icon
+import { MdOutlineInventory } from "react-icons/md"; // Replacing Inventory icon
+import { MdOutlineShoppingCart } from "react-icons/md"; // Replacing Purchase Bill icon
+import { RiLogoutBoxLine } from "react-icons/ri"; // Logout icon
+import { FcDataConfiguration } from "react-icons/fc";
 
 const MENU_ITEMS = [
-  { id: '1', icon: VscDashboard, name: 'Dashboard' },
-  { id: '3', icon: IoCreateOutline, name: 'Create Bill' },
-  { id: '4', icon: SiBuzzfeed, name: 'Sales' },
-  { id: '5', icon: GoPeople, name: 'Customers' },
-  { id: '6', icon: TbReportSearch, name: 'Reports' },
-  { id: '7', icon: LiaFileInvoiceDollarSolid, name: 'Bills' },
-  { id: '8', icon: MdProductionQuantityLimits, name: 'Inventory' },
+  { id: "1", icon: FaHome, name: "Dashboard" },
+  { id: "3", icon: FiFileText, name: "Create Bill" },
+  { id: "4", icon: BiDollarCircle, name: "Sales" },
+  { id: "5", icon: HiOutlineUserGroup, name: "Customers" },
+  { id: "6", icon: AiOutlineBarChart, name: "Reports" },
+  { id: "7", icon: GiReceiveMoney, name: "Bills" },
+  { id: "8", icon: MdOutlineInventory, name: "Inventory" },
+  { id: "9", icon: MdOutlineShoppingCart, name: "Purchase Bill" },
+  { id: "10", icon: FcDataConfiguration, name: "Configuration" },
 ];
 
 const SideMenu = () => {
@@ -32,8 +38,8 @@ const SideMenu = () => {
 
   useMemo(() => {
     const currentPath = window.location.pathname;
-    const activeItem = menuList.find(item => {
-      const path = item.name.toLowerCase().replace(/\s+/g, '-');
+    const activeItem = menuList.find((item) => {
+      const path = item.name.toLowerCase().replace(/\s+/g, "-");
       return currentPath.includes(path);
     });
     if (activeItem) {
@@ -42,8 +48,8 @@ const SideMenu = () => {
   }, [menuList]);
 
   const handleLogout = () => {
-    navigate('/login');
-    localStorage.setItem('isLogin', JSON.stringify(false));
+    navigate("/login");
+    localStorage.setItem("isLogin", JSON.stringify(false));
   };
 
   return (
@@ -51,7 +57,7 @@ const SideMenu = () => {
       <div className="flex-1">
         {menuList.map((item, index) => {
           const { id, name, icon: MenuIcon } = item;
-          const path = name.toLowerCase().replace(/\s+/g, '-');
+          const path = name.toLowerCase().replace(/\s+/g, "-");
 
           return (
             <NavLink to={`/${path}`} key={id} className="text-decoration-none">
@@ -59,14 +65,14 @@ const SideMenu = () => {
                 onClick={() => setActiveIndex(index)}
                 className={`my-3 pl-10 flex gap-3 items-center py-2 cursor-pointer transition-colors duration-300 ${
                   activeIndex === index
-                    ? 'bg-[blue] text-[white]'
-                    : 'hover:bg-blue-200 text-gray-800'
+                    ? "bg-[blue] text-[white]"
+                    : "hover:bg-blue-200 text-gray-800"
                 }`}
               >
                 <MenuIcon className="text-2xl" />
                 <h6
                   className={`text-lg font-medium ${
-                    activeIndex === index ? 'text-[white]' : 'text-gray-800'
+                    activeIndex === index ? "text-[white]" : "text-gray-800"
                   }`}
                 >
                   {name}

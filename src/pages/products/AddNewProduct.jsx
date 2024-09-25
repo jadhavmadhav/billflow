@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   TextField,
   Button,
@@ -18,6 +18,7 @@ import { useSelector } from "react-redux";
 
 const AddNewProduct = () => {
   const [productObj, setProductObj] = useState({});
+  const [errors, setErrors] = useState({});
   const { showToast } = useToast();
   const enterpriseId = localStorage.getItem("enterpriseId");
 
@@ -29,18 +30,51 @@ const AddNewProduct = () => {
   // Reset the form
   const handleCancel = () => {
     setProductObj({});
+    setErrors({});
   };
 
-  // Add new product
+  // Validate required fields
+  const validateFields = () => {
+    const newErrors = {};
+    extraFieldsForProduct?.forEach((field) => {
+      // For checkboxes, false is a valid value unless it's required to be true
+      if (field.required) {
+        if (field.type === "boolean") {
+          if (productObj[field.field] !== true) {
+            newErrors[field.field] = `${field.label} must be checked`;
+          }
+        } else {
+          if (
+            productObj[field.field] === undefined ||
+            productObj[field.field] === "" ||
+            productObj[field.field] === null
+          ) {
+            newErrors[field.field] = `${field.label} is required`;
+          }
+        }
+      }
+    });
+    return newErrors;
+  };
+
+  // Add new product with validation
   const handleAddProduct = async () => {
+    const validationErrors = validateFields();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showToast("Please fill all required fields correctly.", "error");
+      return;
+    }
+
     try {
       const response = await createNewProduct({
         ...productObj,
-        enterpriseId: localStorage.getItem("enterprise_id"),
+        enterpriseId: localStorage.getItem("enterpriseId"),
       });
-    
+
       if (response.status === 200) {
         setProductObj({});
+        setErrors({});
         showToast(response.message, "success");
       } else {
         throw new Error(response.message);
@@ -49,7 +83,8 @@ const AddNewProduct = () => {
       showToast(error.message, "error");
     }
   };
-  // Add new product
+
+  // Handle input changes and clear errors for the field
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -67,9 +102,14 @@ const AddNewProduct = () => {
       ...prev,
       [name]: newValue,
     }));
+
+    // Clear the error for the field if it exists
+    if (errors[name]) {
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
+    }
   };
 
-  // Render different field types
+  // Render different field types with validation
   const renderField = (field) => {
     switch (field.type) {
       case "text":
@@ -84,6 +124,8 @@ const AddNewProduct = () => {
             value={productObj[field.field] || ""}
             onChange={handleChange}
             placeholder={`Enter ${field.label}`}
+            error={!!errors[field.field]}
+            helperText={errors[field.field]}
           />
         );
       case "textarea":
@@ -97,16 +139,19 @@ const AddNewProduct = () => {
             value={productObj[field.field] || ""}
             onChange={handleChange}
             placeholder={`Enter ${field.label}`}
+            error={!!errors[field.field]}
+            helperText={errors[field.field]}
           />
         );
       case "dropdown":
         return (
-          <FormControl fullWidth required={field.required}>
+          <FormControl fullWidth required={field.required} error={!!errors[field.field]}>
             <InputLabel>{field.label}</InputLabel>
             <Select
               name={field.field}
               value={productObj[field.field] || ""}
               onChange={handleChange}
+              label={field.label}
             >
               {field.options.map((option) => (
                 <MenuItem key={option} value={option}>
@@ -114,6 +159,11 @@ const AddNewProduct = () => {
                 </MenuItem>
               ))}
             </Select>
+            {errors[field.field] && (
+              <Typography color="error" variant="caption">
+                {errors[field.field]}
+              </Typography>
+            )}
           </FormControl>
         );
       case "boolean":
@@ -140,6 +190,8 @@ const AddNewProduct = () => {
             InputLabelProps={{ shrink: true }}
             value={productObj[field.field] || ""}
             onChange={handleChange}
+            error={!!errors[field.field]}
+            helperText={errors[field.field]}
           />
         );
       default:
@@ -162,10 +214,10 @@ const AddNewProduct = () => {
       </Grid>
 
       <div style={{ marginTop: "20px", display: "flex", gap: "10px" }}>
-        <Button variant="contained" onClick={handleAddProduct}>
+        <Button variant="contained" color="primary" onClick={handleAddProduct}>
           Add Product
         </Button>
-        <Button variant="outlined" onClick={handleCancel}>
+        <Button variant="outlined" color="secondary" onClick={handleCancel}>
           Cancel
         </Button>
       </div>
